@@ -106,7 +106,7 @@ string create_wizard(string owner, string domain)
 
     set_this_object(previous_object());
     result =
-      (mixed)__MASTER_OBJECT__->master_create_wizard(owner, domain, previous_object());
+      __MASTER_OBJECT__->master_create_wizard(owner, domain, previous_object());
     if (stringp(result)) return result;
     return 0;
 }
@@ -832,7 +832,7 @@ varargs int tail(string file)
 
     if (!stringp(file) || !this_player())
         return 0;
-    string txt = read_bytes(file, -(TAIL_MAX_BYTES + 80), (TAIL_MAX_BYTES + 80));
+    string txt = to_text(read_bytes(file, -(TAIL_MAX_BYTES + 80), (TAIL_MAX_BYTES + 80)), "ASCII");
     if (!stringp(txt))
         return 0;
 
