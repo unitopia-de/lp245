@@ -179,23 +179,23 @@ int got_play(string str) {
 	sscanf(str, "%s says: play %s\n", who , what) == 2) {
 	if (current_problem == 0) {
 	    if (what == "b1" || what == "b 1" || what == "1b" || what == "1 b")
-		solved_by = find_living(lower_case(who));
+		solved_by = present(lower_case(who));
 	    else
-		wrong_by = find_living(lower_case(who));
+		wrong_by = present(lower_case(who));
 	    problem_value = 50;
 	}
 	if (current_problem == 1) {
 	    if (what == "b2" || what == "b 2" || what == "2b" || what == "2 b")
-		solved_by = find_living(lower_case(who));
+		solved_by = present(lower_case(who));
 	    else
-		wrong_by = find_living(lower_case(who));
+		wrong_by = present(lower_case(who));
 	    problem_value = 100;
 	}
 	if (current_problem == 2) {
 	    if (what == "d3" || what == "d 3" || what == "3d" || what == "3 d")
-		 solved_by = find_living(lower_case(who));
+		 solved_by = present(lower_case(who));
 	     else
-		 wrong_by = find_living(lower_case(who));
+		 wrong_by = present(lower_case(who));
 	    problem_value = 200;
 	}
 	notify("The go player contemplates a proposed play.\n");
