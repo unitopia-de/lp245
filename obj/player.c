@@ -1,6 +1,7 @@
 #include "input_to.h"
 #include "log.h"
 #include "living.h"
+#include "portal.h"
 
 #define WIZ 1
 #define ARCH 0
@@ -25,6 +26,8 @@ int tot_value;                /* Saved values of this player. */
 static string current_path;        /* Current directory */
 string access_list;        /* What extra directories can be modified */
 int stats_is_updated;
+mapping intermud_data = ([:1]); /* Save information from other MUDs. */
+static string intermud_mud;     /* We are a traveller from this MUD. */
 
 #define MAX_SCAR        10
 int scar;
@@ -622,6 +625,8 @@ int quit() {
     if (!is_invis) {
         say(cap_name + " left the game.\n");
     }
+    if (intermud_mud)
+        PORTAL_SERVER.send_quit();
     destruct(this_object());
     return 1;
 }
@@ -2496,7 +2501,10 @@ void save_me(int value_items)
     else
         tot_value = 0;
     compute_auto_str();
-    save_object("players/" + name);
+    if (intermud_mud)
+        PORTAL_SERVER.send_savedata(save_object());
+    else
+        save_object("players/" + name);
 }
 
 int illegal_patch(string what) {
@@ -2591,6 +2599,8 @@ int set_quest(string q) {
 }
 
 string query_real_name() {
+    if (intermud_mud)
+        return name + "@" + intermud_mud;
     return name;
 }
 
@@ -2772,3 +2782,103 @@ void add_standard_commands() {
     add_action("who", "who");
 }
 
+nomask mixed get_intermud_data(string mud)
+{
+    if(load_name(previous_object()) != PORTAL_SERVER)
+        return;
+
+    return intermud_data[lower_case(mud)];
+}
+
+nomask void save_intermud_data(string mud, mixed data)
+{
+    if(load_name(previous_object()) != PORTAL_SERVER)
+        return;
+
+    intermud_data[lower_case(mud)] = data;
+    save_me(1);
+}
+
+nomask void setup_intermud_player(string mud, string orig_name, mixed chardata, mixed savedata)
+{
+    name = orig_name;
+    cap_name = (mappingp(chardata) && chardata[P_CHAR_NAME]) || capitalize(orig_name);
+    intermud_mud = mud;
+    myself = this_object();
+
+    enable_commands();
+
+    if (stringp(savedata) && sizeof(savedata) && savedata[0] == '#')
+    {
+        restore_object(savedata);
+    }
+    else
+    {
+        if (!mappingp(chardata))
+            chardata = ([:1]);
+        switch (chardata[P_CHAR_GENDER])
+        {
+            case "male":
+            case "maennlich":
+                set_male();
+                break;
+
+            case "female":
+            case "weiblich":
+                set_female();
+                break;
+
+            default:
+                set_neuter();
+                break;
+        }
+
+        "room/adv_guild"->advance(0);
+        set_level(1); set_str(1); set_con(1); set_int(1); set_dex(1);
+        hit_point = max_hp;
+    }
+
+    /*
+     * Initilize the character stats, if not already done.
+     */
+    if (!stats_is_updated)
+    {
+        int tmp;
+        tmp = level;
+        if (tmp > 20)
+            tmp = 20;
+        set_str(tmp); set_int(tmp); set_con(tmp); set_dex(tmp);
+        stats_is_updated = 1;
+    }
+
+    /*
+     * Now we can enter the game. Check tot_value if the game
+     * crashed, and the values of the player was saved.
+     */
+    set_heart_beat(1);
+    add_standard_commands();
+    if (level >= 20)
+        wiz_commands();
+    if (level >= 21)
+        wiz_commands2();
+    move_object(clone_object("obj/soul"), myself);
+    if (tot_value)
+    {
+        money += tot_value;
+        tot_value = 0;
+    }
+
+    load_auto_obj(auto_load);
+    if (is_invis && level < 20)
+        vis();
+
+    set_living_name(name + "@" + mud);
+}
+
+void catch_tell(string msg)
+{
+    if (intermud_mud)
+        PORTAL_SERVER.send_message(msg);
+    else
+        tell_object(this_object(), msg);
+}

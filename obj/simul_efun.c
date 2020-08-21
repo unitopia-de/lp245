@@ -204,13 +204,13 @@ varargs mixed snoop(mixed snoopee)
 }
 
 //---------------------------------------------------------------------------
-void notify_fail(mixed message)
+int notify_fail(mixed message)
 {
     if ( !(stringp(message) && strstr(message, "@@") < 0) ) {
 	efun::notify_fail(message);
-	return;
+	return 0;
     }
-    efun::notify_fail(
+    return efun::notify_fail(
       funcall(
         bind_lambda(#'lambda, previous_object()),
         0, ({#'process_string, message})
@@ -232,6 +232,8 @@ string query_host_name() {
 nomask void set_environment() {}
 
 nomask void set_this_player() {}
+
+nomask void make_interactive() {}
 
 //---------------------------------------------------------------------------
 varargs void add_worth(int value, object ob)
@@ -742,7 +744,7 @@ void enable_commands()
 //---------------------------------------------------------------------------
 varargs string query_ip_name(object player)
 {
-    return interactive_info(player || this_player(), II_IP_NAME);
+    return interactive(player || this_player()) && interactive_info(player || this_player(), II_IP_NAME);
 }
 
 #endif
@@ -751,7 +753,7 @@ varargs string query_ip_name(object player)
 //---------------------------------------------------------------------------
 varargs string query_ip_number(object player)
 {
-    return interactive_info(player || this_player(), II_IP_NUMBER);
+    return interactive(player || this_player()) && interactive_info(player || this_player(), II_IP_NUMBER);
 }
 
 #endif

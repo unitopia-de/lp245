@@ -1,6 +1,8 @@
 inherit "room/room";
 
 void reset(int arg) {
+    object portal;
+
     if (arg) return;
 
     set_light(1);
@@ -12,5 +14,9 @@ void reset(int arg) {
     dest_dir = ({"room/church", "north",
 		 "room/hump", "west",
 		 "room/vill_track", "east"});
+
+    portal = clone_object("/obj/portal");
+    portal.set_portal_name("UNIPortal");
+    move_object(portal, this_object());
 }
 

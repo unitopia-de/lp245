@@ -21,7 +21,10 @@
 #include "/sys/objectinfo.h"
 #include "/sys/functionlist.h"
 #include "/sys/erq.h"
+#include "/sys/configuration.h"
+#include "/sys/interactive_info.h"
 #include "/sys/object_info.h"
+#include "/sys/portal.h"
 
 #define INIT_FILE "/room/init_file"
 #define BACKBONE_WIZINFO_SIZE 5
@@ -669,6 +672,23 @@ object connect ()
     object ob;
     string ret;
 
+#ifdef PORTAL_PORT
+    if (tls_available() && efun::interactive_info(this_player(), II_MUD_PORT) == PORTAL_PORT)
+    {
+        int err;
+#ifdef PORTAL_CERT
+        configure_driver(DC_TLS_CERTIFICATE, PORTAL_CERT);
+#endif
+        err = tls_init_connection();
+        if (err < 0)
+        {
+            debug_message(tls_error(err));
+            return 0;
+        }
+        return clone_object(PORTAL_CONNECTION);
+    }
+#endif
+
     write("Lars says: Let's get a body for your character ...");
     ob = clone_object("obj/player");
     write("\n");
@@ -681,7 +701,7 @@ object connect ()
 }
 
 //---------------------------------------------------------------------------
-void disconnect (object obj)
+void disconnect (object ob)
 
 // Handle the loss of an IP connection.
 //
@@ -695,6 +715,7 @@ void disconnect (object obj)
 
 {
     mudwho_disconnect(ob);
+    ob->disconnect();
 }
 
 //---------------------------------------------------------------------------
@@ -1303,6 +1324,16 @@ int privilege_violation (string op, mixed who, mixed arg, mixed arg2)
         return 1;
 
     switch(op) {
+      case "configure_driver":
+        if (load_name(who) == PORTAL_CONNECTION && arg == DC_TLS_CERTIFICATE)
+           return 1;
+        return -1;
+
+      case "enable_telnet":
+        if (load_name(who) == PORTAL_CONNECTION)
+           return 1;
+        return -1;
+
       case "erq":
 	switch(arg) {
 	  case ERQ_RLOOKUP:
@@ -1316,6 +1347,21 @@ int privilege_violation (string op, mixed who, mixed arg, mixed arg2)
 	  default:
 	    return -1;
 	}
+      case "input_to":
+        if (load_name(who) == PORTAL_ROOM)
+            return 1;
+        return -1;
+
+      case "net_connect":
+        if (load_name(who) == PORTAL_CONNECTION)
+           return 1;
+        return -1;
+
+      case "nomask simul_efun":
+        if ("/" + who == PORTAL_SERVER ".c")
+            return 1;
+        return -1;
+
       default:
 	return -1; /* Make this violation an error */
     }

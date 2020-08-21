@@ -1,0 +1,16 @@
+# For each portal there is one section with the portal's name in brackets.
+# Such a section contains the following configuration keys:
+#
+#  Room:       The room where the portal is standing
+#              (i.e. where all the visitors from the other MUD will arrive).
+#  DestMUD:    The destination MUD where this portal will lead.
+#  DestPortal: The name of the corresponding portal in the destination MUD.
+#  DestIP:     The address where to connect to.
+#  DestPort:   The port where to connect to.
+
+[UNIPortal]
+Room:       /room/vill_green
+DestMUD:    UNItopia
+DestPortal: LPPortal
+DestIP:     217.11.52.248
+DestPort:   33033

@@ -284,3 +284,10 @@ room/well.c
 room/wild1.c
 room/wiz_hall.c
 room/yard.c
+#
+# Files for the portals
+#
+obj/portal_connection.c
+obj/portal.c
+obj/portal_server.c
+room/portal.c
