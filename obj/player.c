@@ -28,6 +28,9 @@ string access_list;        /* What extra directories can be modified */
 int stats_is_updated;
 mapping intermud_data = ([:1]); /* Save information from other MUDs. */
 static string intermud_mud;     /* We are a traveller from this MUD. */
+static int intermud_terminated; /* We are a traveller, but quitting.
+                                 * 1: sending messages, 2: not sending messages.
+                                 */
 
 #define MAX_SCAR        10
 int scar;
@@ -625,7 +628,7 @@ int quit() {
     if (!is_invis) {
         say(cap_name + " left the game.\n");
     }
-    if (intermud_mud)
+    if (intermud_mud && !intermud_terminated)
         PORTAL_SERVER.send_quit();
     destruct(this_object());
     return 1;
@@ -2501,10 +2504,10 @@ void save_me(int value_items)
     else
         tot_value = 0;
     compute_auto_str();
-    if (intermud_mud)
-        PORTAL_SERVER.send_savedata(save_object());
-    else
+    if (!intermud_mud)
         save_object("players/" + name);
+    else if (intermud_terminated != 2)
+        PORTAL_SERVER.send_savedata(save_object());
 }
 
 int illegal_patch(string what) {
@@ -2875,10 +2878,21 @@ nomask void setup_intermud_player(string mud, string orig_name, mixed chardata, 
     set_living_name(name + "@" + mud);
 }
 
+nomask void quit_intermud_player(int silent)
+{
+    intermud_terminated = silent ? 2 : 1;
+    quit();
+}
+
+nomask int is_intermud_terminated(int need_silence)
+{
+    return need_silence ? intermud_terminated == 2 : intermud_terminated;;
+}
+
 void catch_tell(string msg)
 {
-    if (intermud_mud)
-        PORTAL_SERVER.send_message(msg);
-    else
+    if (!intermud_mud)
         tell_object(this_object(), msg);
+    else if (intermud_terminated != 2)
+        PORTAL_SERVER.send_message(msg);
 }

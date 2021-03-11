@@ -273,7 +273,7 @@ private void enter_portal(object player, mapping info)
             P_MSG_PORTAL:  info[P_CONF_DEST_PORTAL_NAME]
         ]));
 
-        player.quit();
+        player.quit_intermud_player(1);
         start_timeout(con);
     }
     else
@@ -549,7 +549,7 @@ void receive_tcp(object con, mapping val)
             object player = guests[name];
             if(player)
             {
-                player.abort_intermud();
+                player.quit_intermud_player(0);
                 m_delete(guest_names, player);
             }
             m_delete(guests, name);
@@ -766,7 +766,7 @@ void interactive_exec(object pl, object new)
 void receive_message(object pl, string msg)
 {
     object con = get_guest_connection(pl);
-    if(!con)
+    if(!con || pl.is_intermud_terminated(1))
         return;
 
     con.send_tcp(([
@@ -790,7 +790,7 @@ void receive_binary(object pl, bytes msg)
 void receive_prompt(object pl, string msg)
 {
     object con = get_guest_connection(pl);
-    if(!con)
+    if(!con || pl.is_intermud_terminated(1))
         return;
 
     con.send_tcp(([
